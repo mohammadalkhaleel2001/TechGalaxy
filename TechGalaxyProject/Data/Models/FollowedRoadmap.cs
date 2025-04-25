@@ -12,7 +12,7 @@ namespace TechGalaxyProject.Data.Models
         [ForeignKey(nameof (Roadmap))]
         public int RoadmapId { get; set; }
 
-        public AppUser Learner { get; set; } 
-        public Roadmap Roadmap { get; set; } 
+        public virtual AppUser Learner { get; set; } 
+        public virtual Roadmap Roadmap { get; set; } 
     }
 }

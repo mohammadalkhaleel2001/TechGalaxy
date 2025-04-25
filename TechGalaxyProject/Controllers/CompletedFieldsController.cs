@@ -25,7 +25,7 @@ namespace TechGalaxyProject.Controllers
             int learnerId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
 
             bool alreadyCompleted = await _db.completedFields
-                .AnyAsync(c => c.FieldId == fieldId && c.LearnerId == learnerId);
+                .AnyAsync(c => c.FieldId == fieldId && c.LearnerId .Equals( learnerId));
 
             if (alreadyCompleted)
                 return BadRequest("Field already marked as completed.");
@@ -33,7 +33,7 @@ namespace TechGalaxyProject.Controllers
             var completed = new CompletedFields
             {
                 FieldId = fieldId,
-                LearnerId = learnerId
+                LearnerId = learnerId.ToString()
             };
 
             _db.completedFields.Add(completed);
@@ -48,7 +48,7 @@ namespace TechGalaxyProject.Controllers
             int learnerId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
 
             var completed = await _db.completedFields
-                .FirstOrDefaultAsync(c => c.FieldId == fieldId && c.LearnerId == learnerId);
+                .FirstOrDefaultAsync(c => c.FieldId == fieldId && c.LearnerId .Equals( learnerId));
 
             if (completed == null)
                 return NotFound("Field is not marked as completed.");
@@ -66,7 +66,7 @@ namespace TechGalaxyProject.Controllers
 
             var completedFields = await _db.completedFields
                 .Include(c => c.field)
-                .Where(c => c.LearnerId == learnerId)
+                .Where(c => c.LearnerId .Equals( learnerId))
                 .Select(c => new
                 {
                     c.field.Id,

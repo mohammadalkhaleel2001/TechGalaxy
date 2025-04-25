@@ -65,11 +65,11 @@ namespace TechGalaxyProject.Controllers
                         claims.Add(new Claim(ClaimTypes.Name, user.UserName));
                         claims.Add(new Claim(ClaimTypes.NameIdentifier, user.Id));
                         claims.Add(new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()));
-                        var roles = await _userManager.GetRolesAsync(user);
-                        foreach (var role in roles)
-                        {
-                            claims.Add(new Claim(ClaimTypes.Role, role.ToString()));
-                        }
+                       // var roles = await _userManager.GetRolesAsync(user);
+                       // foreach (var role in roles)
+                       // {
+                            claims.Add(new Claim(ClaimTypes.Role, user.Role));
+                      //  }
                         // signingCredentials
                         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["JWT:SecretKey"]));
                         var sc = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);

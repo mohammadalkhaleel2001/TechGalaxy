@@ -22,13 +22,13 @@ namespace TechGalaxyProject.Controllers
         public async Task<IActionResult> GetPendingRequests()
         {
             var requests = await _db.ExpertVerificationRequests
-                .Include(r => r.User)
+                .Include(r => r.Expert)
                 .Where(r => r.status == "Pending")
                 .Select(r => new
                 {
                     r.Id,
-                    ExpertId = r.User.Id,
-                    ExpertUsername = r.User.UserName,
+                    ExpertId = r.Expert.Id,
+                    ExpertUsername = r.Expert.UserName,
                     r.SubmittedAt
                 })
                 .ToListAsync();
@@ -41,7 +41,7 @@ namespace TechGalaxyProject.Controllers
         public async Task<IActionResult> ApproveRequest(int requestId)
         {
             var request = await _db.ExpertVerificationRequests
-                .Include(r => r.User)
+                .Include(r => r.Expert)
                 .FirstOrDefaultAsync(r => r.Id == requestId);
 
             if (request == null)
@@ -49,8 +49,8 @@ namespace TechGalaxyProject.Controllers
 
             request.status = "Approved";
             request.ReviewedAt = DateTime.Now;
-            request.ReviewedBy = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-            request.User.IsVerified = true;
+            request.ReviewedBy = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            request.Expert.IsVerified = true;
 
             await _db.SaveChangesAsync();
             return Ok("Expert approved and verified.");
@@ -61,7 +61,7 @@ namespace TechGalaxyProject.Controllers
         public async Task<IActionResult> RejectRequest(int requestId, [FromBody] string adminNote)
         {
             var request = await _db.ExpertVerificationRequests
-                .Include(r => r.User)
+                .Include(r => r.Expert)
                 .FirstOrDefaultAsync(r => r.Id == requestId);
 
             if (request == null)
@@ -69,7 +69,7 @@ namespace TechGalaxyProject.Controllers
 
             request.status = "Rejected";
             request.ReviewedAt = DateTime.Now;
-            request.ReviewedBy = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            request.ReviewedBy = User.FindFirstValue(ClaimTypes.NameIdentifier);
             request.AdminNote = adminNote;
 
             await _db.SaveChangesAsync();

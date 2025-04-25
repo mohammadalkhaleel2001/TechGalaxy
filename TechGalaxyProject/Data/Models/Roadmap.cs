@@ -11,10 +11,11 @@ namespace TechGalaxyProject.Data.Models
         public string Description { get; set; }
 
         [ForeignKey(nameof(User))]
-        public int CreatedBy { get; set; }
-        public AppUser User { get; set; }
+        public string CreatedBy { get; set; }
+        public virtual AppUser User { get; set; }
         public DateTime CreatedAt { get; set; }
-        public ICollection<Field> fields { get; set; }
-        public ICollection<FollowedRoadmap> followedBy { get; set; }
+        public virtual ICollection<Field> fields { get; set; }
+        public virtual ICollection<FollowedRoadmap> followedBy { get; set; }
+       // public virtual ICollection<RoadmapLike> RoadmapLikes { get; set; }
     }
 }

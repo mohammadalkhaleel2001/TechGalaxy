@@ -69,13 +69,16 @@ namespace TechGalaxyProject.Controllers
             return Ok(dto);
         }
         [HttpPost]
-        
+        [Authorize(Roles = "Expert")]
+
         public async Task<IActionResult> Create([FromBody] CreateRoadmapDto dto)
         {
+            string userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var roadmap = new Roadmap
             {
                 Title = dto.Title,
                 Description = dto.Description,
+                CreatedBy=userId,
                 
             };
 

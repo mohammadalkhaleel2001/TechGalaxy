@@ -15,5 +15,48 @@ namespace TechGalaxyProject.Data
         public DbSet<Field> fields { get; set; }
         public DbSet<Roadmap> roadmaps { get; set; }
         public DbSet<FollowedRoadmap> FollowedRoadmaps { get; set; }
+        
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+
+            /* modelBuilder.Entity<ExpertVerificationRequest>()
+                 .HasOne(e => e.Expert)
+                 .WithMany()
+                 .HasForeignKey(e => e.UserId)
+                 .OnDelete(DeleteBehavior.Restrict); */
+
+           
+
+
+            modelBuilder.Entity<ExpertVerificationRequest>()
+    .HasOne(e => e.Expert)
+    .WithOne(u => u.request)
+    .HasForeignKey<ExpertVerificationRequest>(e => e.UserId)
+    .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<ExpertVerificationRequest>()
+                .HasOne(e => e.Admin)
+                .WithMany(f => f.requests)
+                .HasForeignKey(e => e.ReviewedBy)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<FollowedRoadmap>()
+        .HasOne(fr => fr.Roadmap)
+        .WithMany(r => r.followedBy)
+        .HasForeignKey(fr => fr.RoadmapId)
+        .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<CompletedFields>()
+    .HasOne(cf => cf.field)
+    .WithMany(f => f.completedFields)
+    .HasForeignKey(cf => cf.FieldId)
+    .OnDelete(DeleteBehavior.Restrict); // أو DeleteBehavior.NoAction
+
+            
+
+
+        }
+
     }
 }

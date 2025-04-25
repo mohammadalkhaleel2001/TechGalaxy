@@ -23,7 +23,7 @@ namespace TechGalaxyProject.Extentions
                 o.TokenValidationParameters = new TokenValidationParameters()
                 {
                     ValidateIssuer = true,
-                    ValidIssuer = configuration["JWT:Issure"],
+                    ValidIssuer = configuration["JWT:Issuer"],
                     ValidateAudience = false,
                     ValidateIssuerSigningKey = true,
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["JWT:SecretKey"]))

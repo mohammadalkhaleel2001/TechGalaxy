@@ -7,10 +7,11 @@ namespace TechGalaxyProject.Data.Models
     {
         public string Role { get; set; }
         public bool IsVerified { get; set; }
-        public ICollection<CompletedFields> completedFields { get; set; }
-        public ExpertVerificationRequest request { get; set; }
-        public ICollection<ExpertVerificationRequest> requests { get; set; }
-        public ICollection<Roadmap> createdRoadmaps { get; set; }
-        public ICollection<FollowedRoadmap> followedRoadmaps { get; set; }
+        public virtual ICollection<CompletedFields> completedFields { get; set; }
+        public virtual ExpertVerificationRequest request { get; set; }
+        public virtual ICollection<ExpertVerificationRequest> requests { get; set; }
+        public virtual ICollection<Roadmap> createdRoadmaps { get; set; }
+        public virtual ICollection<FollowedRoadmap> followedRoadmaps { get; set; }
+       // public virtual ICollection<RoadmapLike> RoadmapLikes { get; set; }
     }
 }

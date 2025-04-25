@@ -11,9 +11,9 @@ namespace TechGalaxyProject.Data.Models
         public string Description { get; set; }
         [ForeignKey(nameof (roadmap))]
         public int RoadmapId { get; set; }
-        public Roadmap roadmap { get; set; }
+        public virtual Roadmap roadmap { get; set; }
         public int Order { get; set; }
 
-        public ICollection<CompletedFields> completedFields { get; set; }
+        public virtual ICollection<CompletedFields> completedFields { get; set; }
     }
 }

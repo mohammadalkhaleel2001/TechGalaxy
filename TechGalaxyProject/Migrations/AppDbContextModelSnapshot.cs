@@ -177,6 +177,9 @@ namespace TechGalaxyProject.Migrations
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IsVerified")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("bit");
 
@@ -200,6 +203,10 @@ namespace TechGalaxyProject.Migrations
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("bit");
 
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("nvarchar(max)");
 
@@ -221,6 +228,156 @@ namespace TechGalaxyProject.Migrations
                         .HasFilter("[NormalizedUserName] IS NOT NULL");
 
                     b.ToTable("AspNetUsers", (string)null);
+                });
+
+            modelBuilder.Entity("TechGalaxyProject.Data.Models.CompletedFields", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CompletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("FieldId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("LearnerId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FieldId");
+
+                    b.HasIndex("LearnerId");
+
+                    b.ToTable("completedFields");
+                });
+
+            modelBuilder.Entity("TechGalaxyProject.Data.Models.ExpertVerificationRequest", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AdminNote")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("ReviewedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ReviewedBy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("SubmittedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ReviewedBy");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.ToTable("ExpertVerificationRequests");
+                });
+
+            modelBuilder.Entity("TechGalaxyProject.Data.Models.Field", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Order")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RoadmapId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RoadmapId");
+
+                    b.ToTable("fields");
+                });
+
+            modelBuilder.Entity("TechGalaxyProject.Data.Models.FollowedRoadmap", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("LearnerId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("RoadmapId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LearnerId");
+
+                    b.HasIndex("RoadmapId");
+
+                    b.ToTable("FollowedRoadmaps");
+                });
+
+            modelBuilder.Entity("TechGalaxyProject.Data.Models.Roadmap", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedBy");
+
+                    b.ToTable("roadmaps");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -272,6 +429,111 @@ namespace TechGalaxyProject.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("TechGalaxyProject.Data.Models.CompletedFields", b =>
+                {
+                    b.HasOne("TechGalaxyProject.Data.Models.Field", "field")
+                        .WithMany("completedFields")
+                        .HasForeignKey("FieldId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("TechGalaxyProject.Data.Models.AppUser", "User")
+                        .WithMany("completedFields")
+                        .HasForeignKey("LearnerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+
+                    b.Navigation("field");
+                });
+
+            modelBuilder.Entity("TechGalaxyProject.Data.Models.ExpertVerificationRequest", b =>
+                {
+                    b.HasOne("TechGalaxyProject.Data.Models.AppUser", "Admin")
+                        .WithMany("requests")
+                        .HasForeignKey("ReviewedBy")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("TechGalaxyProject.Data.Models.AppUser", "Expert")
+                        .WithOne("request")
+                        .HasForeignKey("TechGalaxyProject.Data.Models.ExpertVerificationRequest", "UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Admin");
+
+                    b.Navigation("Expert");
+                });
+
+            modelBuilder.Entity("TechGalaxyProject.Data.Models.Field", b =>
+                {
+                    b.HasOne("TechGalaxyProject.Data.Models.Roadmap", "roadmap")
+                        .WithMany("fields")
+                        .HasForeignKey("RoadmapId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("roadmap");
+                });
+
+            modelBuilder.Entity("TechGalaxyProject.Data.Models.FollowedRoadmap", b =>
+                {
+                    b.HasOne("TechGalaxyProject.Data.Models.AppUser", "Learner")
+                        .WithMany("followedRoadmaps")
+                        .HasForeignKey("LearnerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("TechGalaxyProject.Data.Models.Roadmap", "Roadmap")
+                        .WithMany("followedBy")
+                        .HasForeignKey("RoadmapId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Learner");
+
+                    b.Navigation("Roadmap");
+                });
+
+            modelBuilder.Entity("TechGalaxyProject.Data.Models.Roadmap", b =>
+                {
+                    b.HasOne("TechGalaxyProject.Data.Models.AppUser", "User")
+                        .WithMany("createdRoadmaps")
+                        .HasForeignKey("CreatedBy")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("TechGalaxyProject.Data.Models.AppUser", b =>
+                {
+                    b.Navigation("completedFields");
+
+                    b.Navigation("createdRoadmaps");
+
+                    b.Navigation("followedRoadmaps");
+
+                    b.Navigation("request")
+                        .IsRequired();
+
+                    b.Navigation("requests");
+                });
+
+            modelBuilder.Entity("TechGalaxyProject.Data.Models.Field", b =>
+                {
+                    b.Navigation("completedFields");
+                });
+
+            modelBuilder.Entity("TechGalaxyProject.Data.Models.Roadmap", b =>
+                {
+                    b.Navigation("fields");
+
+                    b.Navigation("followedBy");
                 });
 #pragma warning restore 612, 618
         }

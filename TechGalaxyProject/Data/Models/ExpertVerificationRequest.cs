@@ -7,11 +7,13 @@ namespace TechGalaxyProject.Data.Models
     {
         [Key]
         public int Id { get; set; }
-        [ForeignKey(nameof(User))]
-        public int UserId { get; set; }
-        [ForeignKey(nameof(User))]
-        public int ReviewedBy { get; set; }
-        public AppUser User { get; set; }
+        [ForeignKey(nameof(Expert))]
+        public string UserId { get; set; }
+        [ForeignKey(nameof(Admin))]
+        public string ReviewedBy { get; set; }
+        public virtual AppUser Expert { get; set; }
+
+        public virtual AppUser Admin { get; set; }
         public DateTime SubmittedAt { get; set; }
         public string status { get; set; }
         public DateTime ReviewedAt { get; set; }

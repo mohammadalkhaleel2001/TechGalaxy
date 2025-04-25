@@ -29,10 +29,10 @@ namespace TechGalaxyProject.Controllers
             if (roadmap == null)
                 return NotFound("Roadmap not found");
 
-            if (!int.TryParse(userId, out int parsedUserId))
-                return Unauthorized(); // 
+           // if (!int.TryParse(userId, out int parsedUserId))
+              //  return Unauthorized();  
 
-            if (roadmap.CreatedBy != parsedUserId)
+            if (!(roadmap.CreatedBy .Equals( userId)))
                 return Forbid("You can only add fields to your own roadmaps");
 
 
@@ -58,10 +58,10 @@ namespace TechGalaxyProject.Controllers
             if (field == null)
                 return NotFound("Field not found");
 
-            if (!int.TryParse(userId, out int parsedUserId))
-                return Unauthorized(); 
+            //if (!int.TryParse(userId, out int parsedUserId))
+                //return Unauthorized(); 
 
-            if (field.roadmap.CreatedBy != parsedUserId)
+            if (!(field.roadmap.CreatedBy .Equals( userId)))
                 return Forbid("You can only edit your own fields");
 
 

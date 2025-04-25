@@ -8,11 +8,11 @@ namespace TechGalaxyProject.Data.Models
         [Key]
         public int Id { get; set; }
         [ForeignKey(nameof(User))]
-        public int LearnerId { get; set; }
-        public AppUser User { get; set; }
+        public string LearnerId { get; set; }
+        public virtual AppUser User { get; set; }
         [ForeignKey(nameof (field))]
         public int FieldId { get; set; }
-        public Field field { get; set; }
+        public virtual Field field { get; set; }
         public DateTime CompletedAt { get; set; }
 
     }
