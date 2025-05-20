@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace TechGalaxyProject.Migrations
 {
     /// <inheritdoc />
-    public partial class TechDB : Migration
+    public partial class NewConn : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

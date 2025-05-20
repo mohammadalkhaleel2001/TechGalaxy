@@ -12,8 +12,8 @@ using TechGalaxyProject.Data;
 namespace TechGalaxyProject.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250512002810_TechDB")]
-    partial class TechDB
+    [Migration("20250520221341_NewConn")]
+    partial class NewConn
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
