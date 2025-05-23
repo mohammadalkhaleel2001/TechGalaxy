@@ -17,13 +17,13 @@ namespace TechGalaxyProject.Controllers
             _db = db;
         }
 
-        // ✅ عرض جميع الطلبات المعلقة
+        
         [HttpGet("verification-requests")]
         public async Task<IActionResult> GetPendingRequests()
         {
             var requests = await _db.ExpertVerificationRequests
                 .Include(r => r.Expert)
-                .Where(r => r.Status == "Pending") // ✅ حرف S كبير
+                .Where(r => r.Status == "Pending") 
                 .Select(r => new
                 {
                     r.Id,
@@ -36,7 +36,7 @@ namespace TechGalaxyProject.Controllers
             return Ok(requests);
         }
 
-        // ✅ الموافقة على الطلب
+        
         [HttpPost("approve/{requestId}")]
         public async Task<IActionResult> ApproveRequest(int requestId)
         {
@@ -47,7 +47,7 @@ namespace TechGalaxyProject.Controllers
             if (request == null)
                 return NotFound("Request not found");
 
-            request.Status = "Approved"; // ✅ حرف S كبير
+            request.Status = "Approved"; 
             request.ReviewedAt = DateTime.Now;
             request.ReviewedBy = User.FindFirstValue(ClaimTypes.NameIdentifier);
             request.Expert.IsVerified = true;
@@ -56,7 +56,7 @@ namespace TechGalaxyProject.Controllers
             return Ok("Expert approved and verified.");
         }
 
-        // ✅ رفض الطلب
+      
         [HttpPost("reject/{requestId}")]
         public async Task<IActionResult> RejectRequest(int requestId, [FromBody] string adminNote)
         {
@@ -67,7 +67,7 @@ namespace TechGalaxyProject.Controllers
             if (request == null)
                 return NotFound("Request not found");
 
-            request.Status = "Rejected"; // ✅ حرف S كبير
+            request.Status = "Rejected"; 
             request.ReviewedAt = DateTime.Now;
             request.ReviewedBy = User.FindFirstValue(ClaimTypes.NameIdentifier);
             request.AdminNote = adminNote;

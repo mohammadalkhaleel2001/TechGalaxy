@@ -5,8 +5,10 @@ namespace TechGalaxyProject.Models
     public class dtoLogin
     {
         [Required]
-        public string userName { get; set; }
+        public string email { get; set; } = default!;
+
         [Required]
-        public string password { get; set; }
+        public string password { get; set; } = default!;
     }
+
 }

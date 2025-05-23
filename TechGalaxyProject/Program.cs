@@ -9,38 +9,46 @@ using Microsoft.Extensions.Hosting;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// 🔹 إعداد الاتصال بقاعدة البيانات
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseLazyLoadingProxies()
+           .UseSqlServer(builder.Configuration.GetConnectionString("myCon")));
 
-builder.Services.AddDbContext<AppDbContext>(op =>
-    op.UseLazyLoadingProxies().UseSqlServer(builder.Configuration.GetConnectionString("myCon")));
+// 🔹 إعداد الهوية (Identity)
+builder.Services.AddIdentity<AppUser, IdentityRole>()
+                .AddEntityFrameworkStores<AppDbContext>();
 
-
-builder.Services.AddIdentity<AppUser, IdentityRole>().AddEntityFrameworkStores<AppDbContext>();
-
-
+// 🔹 إعداد CORS ليقبل أي Origin (مناسب لجافا سكريبت عادي أو ملف HTML مفتوح مباشرة)
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowReactApp", policy =>
+    options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("http://localhost:3000") // عنوان تطبيق React
+        policy.AllowAnyOrigin()
               .AllowAnyHeader()
               .AllowAnyMethod();
     });
 });
 
-builder.Services.AddControllers().AddNewtonsoftJson();
+// 🔹 إعداد Controllers و JSON
+builder.Services.AddControllers()
+                .AddNewtonsoftJson();
+
+// 🔹 إعداد Swagger مع دعم JWT
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGenJwtAuth();
-builder.Services.AddCustomJwtAuth(builder.Configuration);
+builder.Services.AddSwaggerGenJwtAuth(); // ← موجود في ملف Extentions
+builder.Services.AddCustomJwtAuth(builder.Configuration); // ← إعدادات JWT
 
 var app = builder.Build();
 
+// 🔹 تفعيل Swagger فقط في بيئة التطوير
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-app.UseCors("AllowReactApp");
+// 🔹 تفعيل CORS قبل Middleware المصادقة
+app.UseCors("AllowFrontend");
 
 app.UseHttpsRedirection();
 

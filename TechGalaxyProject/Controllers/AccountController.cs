@@ -98,16 +98,15 @@ namespace TechGalaxyProject.Controllers
                 await _db.SaveChangesAsync();
             }
 
-            return Ok("User registered successfully");
+            return Ok(new { message = "User registered successfully" });
         }
-
         [HttpPost("Login")]
         public async Task<IActionResult> LogIn(dtoLogin login)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var user = await _userManager.FindByNameAsync(login.userName);
+            var user = await _userManager.FindByEmailAsync(login.email); // ✅ Login by email
             if (user == null)
                 return BadRequest("User not found");
 
@@ -115,11 +114,11 @@ namespace TechGalaxyProject.Controllers
                 return Unauthorized("Invalid password");
 
             var claims = new List<Claim>
-            {
-                new Claim(ClaimTypes.Name, user.UserName ?? string.Empty),
-                new Claim(ClaimTypes.NameIdentifier, user.Id ?? string.Empty),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-            };
+    {
+        new Claim(ClaimTypes.Name, user.UserName ?? string.Empty),
+        new Claim(ClaimTypes.NameIdentifier, user.Id ?? string.Empty),
+        new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+    };
 
             var roles = await _userManager.GetRolesAsync(user);
             foreach (var role in roles)
@@ -144,9 +143,14 @@ namespace TechGalaxyProject.Controllers
             return Ok(new
             {
                 token = new JwtSecurityTokenHandler().WriteToken(token),
-                expiration = token.ValidTo
+                expiration = token.ValidTo,
+                userName = user.UserName,
+                email = user.Email,
+                role = roles.FirstOrDefault() ?? "Unknown"
             });
         }
+
+
 
         [HttpGet("GetCurrentUser")]
         [Authorize]
