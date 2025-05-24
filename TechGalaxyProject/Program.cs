@@ -6,49 +6,53 @@ using TechGalaxyProject.Extentions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using TechGalaxyProject.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 🔹 إعداد الاتصال بقاعدة البيانات
+
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseLazyLoadingProxies()
            .UseSqlServer(builder.Configuration.GetConnectionString("myCon")));
 
-// 🔹 إعداد الهوية (Identity)
-builder.Services.AddIdentity<AppUser, IdentityRole>()
-                .AddEntityFrameworkStores<AppDbContext>();
 
-// 🔹 إعداد CORS ليقبل أي Origin (مناسب لجافا سكريبت عادي أو ملف HTML مفتوح مباشرة)
+builder.Services.AddIdentity<AppUser, IdentityRole>()
+                .AddEntityFrameworkStores<AppDbContext>()
+                .AddDefaultTokenProviders();
+
+
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowFrontend", policy =>
+    options.AddPolicy("AllowNetlifyApp", policy =>
     {
-        policy.AllowAnyOrigin()
+        policy.WithOrigins("https://68311f7890065681810ad943--steady-rugelach-10f3fa.netlify.app")
+
               .AllowAnyHeader()
               .AllowAnyMethod();
     });
 });
 
-// 🔹 إعداد Controllers و JSON
+
 builder.Services.AddControllers()
                 .AddNewtonsoftJson();
 
-// 🔹 إعداد Swagger مع دعم JWT
+
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGenJwtAuth(); // ← موجود في ملف Extentions
-builder.Services.AddCustomJwtAuth(builder.Configuration); // ← إعدادات JWT
+builder.Services.AddSwaggerGenJwtAuth();
+builder.Services.AddCustomJwtAuth(builder.Configuration);
+builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
+
 
 var app = builder.Build();
 
-// 🔹 تفعيل Swagger فقط في بيئة التطوير
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-// 🔹 تفعيل CORS قبل Middleware المصادقة
-app.UseCors("AllowFrontend");
+app.UseCors("AllowNetlifyApp");
 
 app.UseHttpsRedirection();
 

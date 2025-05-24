@@ -1,11 +1,8 @@
-﻿/*******************************************
- * AccountController - Cleaned to Match UI *
- *******************************************/
-
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -13,6 +10,7 @@ using System.Text;
 using TechGalaxyProject.Data;
 using TechGalaxyProject.Data.Models;
 using TechGalaxyProject.Models;
+using TechGalaxyProject.Services; 
 
 namespace TechGalaxyProject.Controllers
 {
@@ -24,17 +22,20 @@ namespace TechGalaxyProject.Controllers
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly IConfiguration _configuration;
         private readonly AppDbContext _db;
+        private readonly IEmailSender _emailSender; 
 
         public AccountController(
             UserManager<AppUser> userManager,
             RoleManager<IdentityRole> roleManager,
             IConfiguration configuration,
-            AppDbContext db)
+            AppDbContext db,
+            IEmailSender emailSender) 
         {
             _userManager = userManager;
             _roleManager = roleManager;
             _configuration = configuration;
             _db = db;
+            _emailSender = emailSender;
         }
 
         [HttpPost("Register")]
@@ -54,6 +55,11 @@ namespace TechGalaxyProject.Controllers
                 if (user.CertificateFile == null || user.CertificateFile.Length == 0)
                     return BadRequest("Certificate file is required for Experts.");
             }
+
+            
+            var existingUser = await _userManager.FindByEmailAsync(user.email);
+            if (existingUser != null)
+                return BadRequest("Email is already registered.");
 
             var appUser = new AppUser
             {
@@ -100,13 +106,15 @@ namespace TechGalaxyProject.Controllers
 
             return Ok(new { message = "User registered successfully" });
         }
+
+
         [HttpPost("Login")]
         public async Task<IActionResult> LogIn(dtoLogin login)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var user = await _userManager.FindByEmailAsync(login.email); // ✅ Login by email
+            var user = await _userManager.FindByEmailAsync(login.email);
             if (user == null)
                 return BadRequest("User not found");
 
@@ -114,11 +122,11 @@ namespace TechGalaxyProject.Controllers
                 return Unauthorized("Invalid password");
 
             var claims = new List<Claim>
-    {
-        new Claim(ClaimTypes.Name, user.UserName ?? string.Empty),
-        new Claim(ClaimTypes.NameIdentifier, user.Id ?? string.Empty),
-        new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-    };
+            {
+                new Claim(ClaimTypes.Name, user.UserName ?? string.Empty),
+                new Claim(ClaimTypes.NameIdentifier, user.Id ?? string.Empty),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+            };
 
             var roles = await _userManager.GetRolesAsync(user);
             foreach (var role in roles)
@@ -150,7 +158,49 @@ namespace TechGalaxyProject.Controllers
             });
         }
 
+        [HttpPost("ForgotPassword")]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto model)
+        {
+            var users = await _userManager.Users
+                .Where(u => u.Email == model.Email)
+                .ToListAsync();
 
+            if (users.Count == 0)
+                return BadRequest("Email not found.");
+
+            if (users.Count > 1)
+                return BadRequest("Multiple users found with this email. Please contact support.");
+
+            var user = users.First();
+
+            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+            var encodedToken = Uri.EscapeDataString(token);
+
+            var resetUrl = $"https://68311f7890065681810ad943--steady-rugelach-10f3fa.netlify.app/resetPassword.html?email={model.Email}&token={encodedToken}";
+
+            var htmlMessage = _emailSender is SmtpEmailSender smtp
+                ? smtp.GenerateResetPasswordEmailBody(user.UserName ?? user.Email, resetUrl)
+                : $"Click the link to reset your password: <a href='{resetUrl}'>Reset</a>";
+
+            await _emailSender.SendEmailAsync(model.Email, "Reset Your Password", htmlMessage);
+
+            return Ok("Password reset link has been sent to your email.");
+        }
+
+        [HttpPost("ResetPassword")]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto model)
+        {
+            var user = await _userManager.FindByEmailAsync(model.Email);
+            if (user == null)
+                return BadRequest("User not found");
+
+            var result = await _userManager.ResetPasswordAsync(user, model.Token, model.NewPassword);
+
+            if (!result.Succeeded)
+                return BadRequest(result.Errors);
+
+            return Ok("Password has been reset successfully.");
+        }
 
         [HttpGet("GetCurrentUser")]
         [Authorize]
