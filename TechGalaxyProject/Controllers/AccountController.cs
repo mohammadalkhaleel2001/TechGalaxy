@@ -5,12 +5,14 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
+using System.Net.Mail;
+using System.Net;
 using System.Security.Claims;
 using System.Text;
 using TechGalaxyProject.Data;
 using TechGalaxyProject.Data.Models;
 using TechGalaxyProject.Models;
-using TechGalaxyProject.Services; 
+using TechGalaxyProject.Services;
 
 namespace TechGalaxyProject.Controllers
 {
@@ -22,20 +24,23 @@ namespace TechGalaxyProject.Controllers
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly IConfiguration _configuration;
         private readonly AppDbContext _db;
-        private readonly IEmailSender _emailSender; 
+        private readonly IEmailSender _emailSender;
+        private readonly ILogger<AccountController> _logger;
 
         public AccountController(
             UserManager<AppUser> userManager,
             RoleManager<IdentityRole> roleManager,
             IConfiguration configuration,
             AppDbContext db,
-            IEmailSender emailSender) 
+            IEmailSender emailSender,
+            ILogger<AccountController> logger)
         {
             _userManager = userManager;
             _roleManager = roleManager;
             _configuration = configuration;
             _db = db;
             _emailSender = emailSender;
+            _logger = logger;
         }
 
         [HttpPost("Register")]
@@ -56,7 +61,6 @@ namespace TechGalaxyProject.Controllers
                     return BadRequest("Certificate file is required for Experts.");
             }
 
-            
             var existingUser = await _userManager.FindByEmailAsync(user.email);
             if (existingUser != null)
                 return BadRequest("Email is already registered.");
@@ -107,7 +111,6 @@ namespace TechGalaxyProject.Controllers
             return Ok(new { message = "User registered successfully" });
         }
 
-
         [HttpPost("Login")]
         public async Task<IActionResult> LogIn(dtoLogin login)
         {
@@ -157,22 +160,32 @@ namespace TechGalaxyProject.Controllers
                 role = roles.FirstOrDefault() ?? "Unknown"
             });
         }
+       
+
+
 
         [HttpPost("ForgotPassword")]
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto model)
         {
+            _logger.LogInformation(" ForgotPassword called for: {Email}", model.Email);
+
             var users = await _userManager.Users
                 .Where(u => u.Email == model.Email)
                 .ToListAsync();
 
             if (users.Count == 0)
+            {
+                _logger.LogWarning(" Email not found in DB: {Email}", model.Email);
                 return BadRequest("Email not found.");
+            }
 
             if (users.Count > 1)
+            {
+                _logger.LogWarning("❗ Multiple users found for: {Email}", model.Email);
                 return BadRequest("Multiple users found with this email. Please contact support.");
+            }
 
             var user = users.First();
-
             var token = await _userManager.GeneratePasswordResetTokenAsync(user);
             var encodedToken = Uri.EscapeDataString(token);
 
@@ -182,7 +195,9 @@ namespace TechGalaxyProject.Controllers
                 ? smtp.GenerateResetPasswordEmailBody(user.UserName ?? user.Email, resetUrl)
                 : $"Click the link to reset your password: <a href='{resetUrl}'>Reset</a>";
 
+            _logger.LogInformation(" Sending email to: {Email}", model.Email);
             await _emailSender.SendEmailAsync(model.Email, "Reset Your Password", htmlMessage);
+            _logger.LogInformation("Email sent successfully to: {Email}", model.Email);
 
             return Ok("Password reset link has been sent to your email.");
         }

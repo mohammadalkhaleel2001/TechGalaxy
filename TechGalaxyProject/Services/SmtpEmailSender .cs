@@ -1,64 +1,60 @@
-﻿using System.Net.Mail;
-using System.Net;
+﻿using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Text;
+using System.Text.Json;
 
 namespace TechGalaxyProject.Services
 {
     public class SmtpEmailSender : IEmailSender
     {
         private readonly IConfiguration _config;
+        private readonly HttpClient _httpClient;
 
         public SmtpEmailSender(IConfiguration config)
         {
             _config = config;
+            _httpClient = new HttpClient();
         }
 
         public async Task SendEmailAsync(string toEmail, string subject, string htmlMessage)
         {
-            try
+            var apiKey = _config["Brevo:ApiKey"];
+            var senderEmail = _config["Brevo:SenderEmail"];
+            var senderName = _config["Brevo:SenderName"];
+
+            var plainText = "Please check your email in HTML format to reset your password.";
+
+            var requestBody = new
             {
-                Console.WriteLine("📨 Preparing to send email...");
-
-                var smtpClient = new SmtpClient
+                sender = new { name = senderName, email = senderEmail },
+                to = new[] { new { email = toEmail } },
+                subject = subject,
+                htmlContent = htmlMessage,
+                textContent = plainText,
+                headers = new Dictionary<string, string>
                 {
-                    Host = _config["Smtp:Host"],
-                    Port = int.Parse(_config["Smtp:Port"]!),
-                    EnableSsl = true,
-                    Credentials = new NetworkCredential(
-                        _config["Smtp:Username"],
-                        _config["Smtp:Password"]
-                    )
-                };
+                    { "X-Mailin-custom", "TechGalaxyMail" }
+                }
+            };
 
-                var mail = new MailMessage
-                {
-                    From = new MailAddress(_config["Smtp:SenderEmail"]!, _config["Smtp:SenderName"]),
-                    Subject = subject,
-                    IsBodyHtml = true
-                };
+            var json = JsonSerializer.Serialize(requestBody);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-                mail.To.Add(toEmail);
-                mail.ReplyToList.Add(new MailAddress(_config["Smtp:SenderEmail"]!));
-                mail.Headers.Add("X-Priority", "1"); // optional priority flag
+            _httpClient.DefaultRequestHeaders.Clear();
+            _httpClient.DefaultRequestHeaders.Add("api-key", apiKey);
 
-                // Add both plain text and HTML versions for better delivery
-                var plainText = "Please view this email in an HTML-compatible viewer.";
-                var plainView = AlternateView.CreateAlternateViewFromString(plainText, null, "text/plain");
-                var htmlView = AlternateView.CreateAlternateViewFromString(htmlMessage, null, "text/html");
+            var response = await _httpClient.PostAsync("https://api.brevo.com/v3/smtp/email", content);
 
-                mail.AlternateViews.Add(plainView);
-                mail.AlternateViews.Add(htmlView);
-
-                Console.WriteLine($"📧 Sending email to: {toEmail}");
-                await smtpClient.SendMailAsync(mail);
-                Console.WriteLine("✅ Email sent successfully");
-            }
-            catch (Exception ex)
+            if (!response.IsSuccessStatusCode)
             {
-                Console.WriteLine("❌ Failed to send email:");
-                Console.WriteLine(ex.Message);
-                Console.WriteLine(ex.StackTrace);
-                throw;
+                var responseBody = await response.Content.ReadAsStringAsync();
+                Console.WriteLine(" Failed to send via Brevo API:");
+                Console.WriteLine($"Status: {response.StatusCode}");
+                Console.WriteLine($"Response: {responseBody}");
+                throw new Exception($"Failed to send email via Brevo: {response.StatusCode}");
             }
+
+            Console.WriteLine(" Email sent successfully via Brevo API");
         }
 
         public string GenerateResetPasswordEmailBody(string userName, string resetUrl)
