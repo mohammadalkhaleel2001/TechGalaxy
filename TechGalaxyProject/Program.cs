@@ -25,7 +25,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowNetlifyApp", policy =>
     {
-        policy.WithOrigins("https://68311f7890065681810ad943--steady-rugelach-10f3fa.netlify.app")
+        policy.WithOrigins("https://683386776d9593bd9c661de7--steady-rugelach-10f3fa.netlify.app")
 
               .AllowAnyHeader()
               .AllowAnyMethod();
@@ -55,6 +55,7 @@ if (app.Environment.IsDevelopment())
 app.UseCors("AllowNetlifyApp");
 
 app.UseHttpsRedirection();
+app.UseStaticFiles();
 
 app.UseAuthentication();
 app.UseAuthorization();

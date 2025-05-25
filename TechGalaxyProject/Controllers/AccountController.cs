@@ -95,11 +95,15 @@ namespace TechGalaxyProject.Controllers
                     await user.CertificateFile.CopyToAsync(stream);
                 }
 
+              
+                var baseUrl = $"{Request.Scheme}://{Request.Host}";
+                var certificateUrl = $"{baseUrl}/uploads/certificates/{fileName}";
+
                 var verificationRequest = new ExpertVerificationRequest
                 {
                     UserId = appUser.Id,
                     Specialty = user.Specialty!,
-                    CertificatePath = "/uploads/certificates/" + fileName,
+                    CertificatePath = certificateUrl,
                     SubmittedAt = DateTime.UtcNow,
                     Status = "Pending"
                 };
@@ -108,12 +112,27 @@ namespace TechGalaxyProject.Controllers
                 await _db.SaveChangesAsync();
             }
 
-            return Ok(new { message = "User registered successfully" });
+            if (user.Role == "Expert")
+            {
+                return Ok(new
+                {
+                    message = "Registration successful. Your certificate has been submitted for admin approval. You will be notified once your account is verified.",
+                    requiresApproval = true
+                });
+            }
+
+            return Ok(new
+            {
+                message = "User registered successfully",
+                requiresApproval = false
+            });
         }
+
 
         [HttpPost("Login")]
         public async Task<IActionResult> LogIn(dtoLogin login)
         {
+
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
@@ -123,6 +142,11 @@ namespace TechGalaxyProject.Controllers
 
             if (!await _userManager.CheckPasswordAsync(user, login.password))
                 return Unauthorized("Invalid password");
+            if (user.Role == "Expert" && !user.IsVerified)
+            {
+                return Unauthorized("Your account is pending verification. Please wait for admin approval.");
+            }
+
 
             var claims = new List<Claim>
             {
@@ -216,6 +240,73 @@ namespace TechGalaxyProject.Controllers
 
             return Ok("Password has been reset successfully.");
         }
+        [HttpGet("PendingExpertVerifications")]
+        public async Task<IActionResult> GetPendingExpertVerifications()
+        {
+            var pendingRequests = await _db.ExpertVerificationRequests
+                .Include(r => r.Expert) 
+                .Where(r => r.Status == "Pending")
+                .Select(r => new
+                {
+                    RequestId = r.Id,
+                    UserId = r.Expert.Id,
+                    UserName = r.Expert.UserName,
+                    Email = r.Expert.Email,
+                    Specialty = r.Specialty,
+                    CertificateUrl = r.CertificatePath,
+                    SubmittedAt = r.SubmittedAt
+                })
+                .ToListAsync();
+
+            return Ok(pendingRequests);
+        }
+
+
+        [HttpPost("ReviewExpert")]
+        public async Task<IActionResult> ReviewExpert([FromBody] ExpertReviewDto model)
+        {
+            var request = await _db.ExpertVerificationRequests
+                .Include(r => r.Expert)
+                .FirstOrDefaultAsync(r => r.Id == model.Id && r.Status == "Pending");
+
+            if (request == null)
+                return NotFound(new { message = "Request not found or already processed." });
+
+            request.Status = model.Approve ? "Approved" : "Rejected";
+            request.ReviewedAt = DateTime.UtcNow;
+
+            var expert = request.Expert;
+            string subject, body;
+
+            if (model.Approve)
+            {
+                request.Expert.IsVerified = true;
+
+                subject = "✅ Expert Verification Approved";
+                body = $"Hello {expert.UserName},<br><br>" +
+                       $"Your expert verification request has been <b>approved</b> successfully. You now have full access to the platform as an expert.<br><br>" +
+                       $"Best regards,<br>TechGalaxy Team";
+            }
+            else
+            {
+                request.Expert.IsVerified = false;
+
+                subject = "❌ Expert Verification Rejected";
+                body = $"Hello {expert.UserName},<br><br>" +
+                       $"Unfortunately, your expert verification request has been <b>rejected</b>. Please ensure your certificate is valid and try again later.<br><br>" +
+                       $"Best regards,<br>TechGalaxy Team";
+
+                _db.ExpertVerificationRequests.Remove(request);
+                _db.Users.Remove(request.Expert);
+            }
+
+            await _emailSender.SendEmailAsync(expert.Email, subject, body);
+            await _db.SaveChangesAsync();
+
+            return Ok(new { message = model.Approve ? "Expert approved." : "Expert rejected." });
+        }
+
+
 
         [HttpGet("GetCurrentUser")]
         [Authorize]
