@@ -261,7 +261,6 @@ namespace TechGalaxyProject.Controllers
             return Ok(pendingRequests);
         }
 
-
         [HttpPost("ReviewExpert")]
         public async Task<IActionResult> ReviewExpert([FromBody] ExpertReviewDto model)
         {
@@ -300,7 +299,16 @@ namespace TechGalaxyProject.Controllers
                 _db.Users.Remove(request.Expert);
             }
 
-            await _emailSender.SendEmailAsync(expert.Email, subject, body);
+            // ✅ محاولة إرسال الإيميل، بدون ما تكسر العملية لو فشل
+            try
+            {
+                await _emailSender.SendEmailAsync(expert.Email, subject, body);
+            }
+            catch
+            {
+                // تجاهل الخطأ، ولا تعمل return أو throw
+            }
+
             await _db.SaveChangesAsync();
 
             return Ok(new { message = model.Approve ? "Expert approved." : "Expert rejected." });
